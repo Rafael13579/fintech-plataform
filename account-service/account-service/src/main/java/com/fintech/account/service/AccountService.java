@@ -7,10 +7,10 @@ import com.fintech.account.repository.AccountRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.util.*;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
-import static java.util.Arrays.stream;
+import java.math.BigDecimal;
+
 
 @Service
 public class AccountService {
@@ -45,6 +45,57 @@ public class AccountService {
         Page<Account> accounts = accountRepository.listAccounts(pageable);
 
         return accounts.map(this::mapToAccountResponseDto);
+    }
+
+    @Transactional
+    public void deposit(BigDecimal amount, String document) {
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be greater than zero");
+        }
+
+        Account acc = accountRepository.findByDocument(document)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        acc.setBalance(acc.getBalance().add(amount));
+    }
+
+    @Transactional
+    public void withdraw(BigDecimal amount, String document) {
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Withdraw amount must be greater than zero");
+        }
+
+        Account acc = accountRepository.findByDocument(document)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (acc.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        acc.setBalance(acc.getBalance().subtract(amount));
+    }
+
+    @Transactional
+    public void transfer(BigDecimal amount, String fromDocument, String toDocument) {
+
+        if (fromDocument.equals(toDocument)) {
+            throw new IllegalArgumentException("Cannot transfer to the same account");
+        }
+
+        Account sender = accountRepository.findByDocument(fromDocument)
+                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+
+        Account receiver = accountRepository.findByDocument(toDocument)
+                .orElseThrow(() -> new RuntimeException("Receiver account not found"));
+
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        sender.setBalance(sender.getBalance().subtract(amount));
+        receiver.setBalance(receiver.getBalance().add(amount));
     }
 
     public AccountResponseDto mapToAccountResponseDto(Account acc) {
