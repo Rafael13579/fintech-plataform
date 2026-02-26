@@ -2,6 +2,7 @@ package com.fintech.account.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,4 +29,8 @@ public class Account {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
 }
