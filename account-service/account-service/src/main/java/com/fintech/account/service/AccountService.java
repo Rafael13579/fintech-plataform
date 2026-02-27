@@ -2,6 +2,9 @@ package com.fintech.account.service;
 
 import com.fintech.account.dto.AccountCreateDto;
 import com.fintech.account.dto.AccountResponseDto;
+import com.fintech.account.exception.AccountNotFoundException;
+import com.fintech.account.exception.InsufficientBalanceException;
+import com.fintech.account.exception.InvalidTransactionException;
 import com.fintech.account.model.Account;
 import com.fintech.account.repository.AccountRepository;
 import org.springframework.data.domain.Page;
@@ -36,7 +39,7 @@ public class AccountService {
 
     public AccountResponseDto getAccountByDocument(String document) {
         Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException(document));
 
         return mapToAccountResponseDto(acc);
     }
@@ -81,17 +84,17 @@ public class AccountService {
     public void transfer(BigDecimal amount, String fromDocument, String toDocument) {
 
         if (fromDocument.equals(toDocument)) {
-            throw new IllegalArgumentException("Cannot transfer to the same account");
+            throw new InvalidTransactionException("Cannot transfer to the same account");
         }
 
         Account sender = accountRepository.findByDocument(fromDocument)
-                .orElseThrow(() -> new RuntimeException("Sender account not found"));
+                .orElseThrow(() -> new AccountNotFoundException(fromDocument));
 
         Account receiver = accountRepository.findByDocument(toDocument)
-                .orElseThrow(() -> new RuntimeException("Receiver account not found"));
+                .orElseThrow(() -> new AccountNotFoundException(toDocument));
 
         if (sender.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new InsufficientBalanceException();
         }
 
         sender.setBalance(sender.getBalance().subtract(amount));
