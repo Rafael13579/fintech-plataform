@@ -1,5 +1,6 @@
 package com.fintech.account.dto;
 
+import com.fintech.account.model.AccountStatus;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
@@ -14,6 +15,9 @@ public record AccountCreateDto(
 
         @NotNull(message = "Initial balance cannot be null")
         @PositiveOrZero(message = "Initial balance cannot be negative")
-        BigDecimal balance
+        BigDecimal balance,
+
+        @NotNull(message = "Status cannot be null")
+        AccountStatus status
 
 ) {}

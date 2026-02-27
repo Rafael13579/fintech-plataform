@@ -6,6 +6,7 @@ import com.fintech.account.exception.AccountNotFoundException;
 import com.fintech.account.exception.InsufficientBalanceException;
 import com.fintech.account.exception.InvalidTransactionException;
 import com.fintech.account.model.Account;
+import com.fintech.account.model.AccountStatus;
 import com.fintech.account.repository.AccountRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public class AccountService {
         Account acc = Account.builder()
                 .document(dto.document())
                 .balance(dto.balance())
-                .holderName(dto.HolderName())
+                .holderName(dto.holderName())
                 .status(dto.status())
                 .build();
 
@@ -99,6 +100,42 @@ public class AccountService {
 
         sender.setBalance(sender.getBalance().subtract(amount));
         receiver.setBalance(receiver.getBalance().add(amount));
+    }
+
+    @Transactional
+    public void setBlocked(String document) {
+        Account acc = accountRepository.findByDocument(document)
+                .orElseThrow(() -> new AccountNotFoundException(document));
+
+        if (acc.getStatus() == AccountStatus.BLOCKED) {
+            throw new IllegalArgumentException("Account is already blocked");
+        }
+
+        acc.setStatus(AccountStatus.BLOCKED);
+    }
+
+    @Transactional
+    public void setActive(String document) {
+        Account acc = accountRepository.findByDocument(document)
+                .orElseThrow(() -> new AccountNotFoundException(document));
+
+        if (acc.getStatus() == AccountStatus.ACTIVE) {
+            throw new IllegalArgumentException("Account is already active");
+        }
+
+        acc.setStatus(AccountStatus.ACTIVE);
+    }
+
+    @Transactional
+    public void setClosed(String document) {
+        Account acc = accountRepository.findByDocument(document)
+                .orElseThrow(() -> new AccountNotFoundException(document));
+
+        if  (acc.getStatus() == AccountStatus.CLOSED) {
+            throw new IllegalArgumentException("Account is already closed");
+        }
+
+        acc.setStatus(AccountStatus.CLOSED);
     }
 
     public AccountResponseDto mapToAccountResponseDto(Account acc) {

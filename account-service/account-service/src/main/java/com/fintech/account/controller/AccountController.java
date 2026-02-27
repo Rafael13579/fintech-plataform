@@ -60,4 +60,22 @@ public class AccountController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{document}/set_blocked")
+    public ResponseEntity<Void> setBlocked(@PathVariable String document) {
+        accountService.setBlocked(document);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{document}/set_active")
+    public ResponseEntity<Void> setActive(@PathVariable String document) {
+        accountService.setActive(document);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{document}/set_closed")
+    public ResponseEntity<Void> setClosed(@PathVariable String document) {
+        accountService.setClosed(document);
+        return ResponseEntity.noContent().build();
+    }
 }
