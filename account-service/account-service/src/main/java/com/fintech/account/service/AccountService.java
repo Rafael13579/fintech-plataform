@@ -15,84 +15,79 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
-
 @Service
 public class AccountService {
 
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
     }
 
+    @Transactional
     public AccountResponseDto createAccount(AccountCreateDto dto) {
-        Account acc = Account.builder()
+
+        Account account = Account.builder()
                 .document(dto.document())
-                .balance(dto.balance())
                 .holderName(dto.holderName())
-                .status(dto.status())
+                .balance(BigDecimal.ZERO)
+                .status(AccountStatus.ACTIVE)
                 .build();
 
-        Account saved = accountRepository.save(acc);
+        Account saved = accountRepository.save(account);
 
-        return mapToAccountResponseDto(saved);
+        return mapToDto(saved);
     }
 
     public AccountResponseDto getAccountByDocument(String document) {
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new AccountNotFoundException(document));
-
-        return mapToAccountResponseDto(acc);
+        return mapToDto(findAccountOrThrow(document));
     }
 
     public Page<AccountResponseDto> listAccounts(Pageable pageable) {
-        Page<Account> accounts = accountRepository.listAccounts(pageable);
-
-        return accounts.map(this::mapToAccountResponseDto);
+        return accountRepository.findAll(pageable)
+                .map(this::mapToDto);
     }
 
     @Transactional
     public void deposit(BigDecimal amount, String document) {
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Deposit amount must be greater than zero");
-        }
+        validateAmount(amount);
 
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = findAccountOrThrow(document);
+        validateAccountIsActive(account);
 
-        acc.setBalance(acc.getBalance().add(amount));
+        account.setBalance(account.getBalance().add(amount));
     }
 
     @Transactional
     public void withdraw(BigDecimal amount, String document) {
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Withdraw amount must be greater than zero");
+        validateAmount(amount);
+
+        Account account = findAccountOrThrow(document);
+        validateAccountIsActive(account);
+
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
         }
 
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        if (acc.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance");
-        }
-
-        acc.setBalance(acc.getBalance().subtract(amount));
+        account.setBalance(account.getBalance().subtract(amount));
     }
 
     @Transactional
     public void transfer(BigDecimal amount, String fromDocument, String toDocument) {
 
+        validateAmount(amount);
+
         if (fromDocument.equals(toDocument)) {
             throw new InvalidTransactionException("Cannot transfer to the same account");
         }
 
-        Account sender = accountRepository.findByDocument(fromDocument)
-                .orElseThrow(() -> new AccountNotFoundException(fromDocument));
+        Account sender = findAccountOrThrow(fromDocument);
+        Account receiver = findAccountOrThrow(toDocument);
 
-        Account receiver = accountRepository.findByDocument(toDocument)
-                .orElseThrow(() -> new AccountNotFoundException(toDocument));
+        validateAccountIsActive(sender);
+        validateAccountIsActive(receiver);
 
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new InsufficientBalanceException();
@@ -104,47 +99,71 @@ public class AccountService {
 
     @Transactional
     public void setBlocked(String document) {
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new AccountNotFoundException(document));
+        Account account = findAccountOrThrow(document);
 
-        if (acc.getStatus() == AccountStatus.BLOCKED) {
-            throw new IllegalArgumentException("Account is already blocked");
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            throw new InvalidTransactionException("Closed account cannot be modified");
         }
 
-        acc.setStatus(AccountStatus.BLOCKED);
+        if (account.getStatus() == AccountStatus.BLOCKED) {
+            throw new InvalidTransactionException("Account is already blocked");
+        }
+
+        account.setStatus(AccountStatus.BLOCKED);
     }
 
     @Transactional
     public void setActive(String document) {
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new AccountNotFoundException(document));
+        Account account = findAccountOrThrow(document);
 
-        if (acc.getStatus() == AccountStatus.ACTIVE) {
-            throw new IllegalArgumentException("Account is already active");
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            throw new InvalidTransactionException("Closed account cannot be reactivated");
         }
 
-        acc.setStatus(AccountStatus.ACTIVE);
+        if (account.getStatus() == AccountStatus.ACTIVE) {
+            throw new InvalidTransactionException("Account is already active");
+        }
+
+        account.setStatus(AccountStatus.ACTIVE);
     }
 
     @Transactional
     public void setClosed(String document) {
-        Account acc = accountRepository.findByDocument(document)
-                .orElseThrow(() -> new AccountNotFoundException(document));
+        Account account = findAccountOrThrow(document);
 
-        if  (acc.getStatus() == AccountStatus.CLOSED) {
-            throw new IllegalArgumentException("Account is already closed");
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            throw new InvalidTransactionException("Account is already closed");
         }
 
-        acc.setStatus(AccountStatus.CLOSED);
+        account.setStatus(AccountStatus.CLOSED);
     }
 
-    public AccountResponseDto mapToAccountResponseDto(Account acc) {
+    private Account findAccountOrThrow(String document) {
+        return accountRepository.findByDocument(document)
+                .orElseThrow(() -> new AccountNotFoundException(document));
+    }
 
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidTransactionException("Amount must be greater than zero");
+        }
+    }
+
+    private void validateAccountIsActive(Account account) {
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new InvalidTransactionException(
+                    "Account is not active. Current status: " + account.getStatus()
+            );
+        }
+    }
+
+    private AccountResponseDto mapToDto(Account account) {
         return new AccountResponseDto(
-                acc.getId(),
-                acc.getDocument(),
-                acc.getBalance(),
-                acc.getHolderName(),
-                acc.getStatus());
+                account.getId(),
+                account.getDocument(),
+                account.getHolderName(),
+                account.getBalance(),
+                account.getStatus()
+        );
     }
 }

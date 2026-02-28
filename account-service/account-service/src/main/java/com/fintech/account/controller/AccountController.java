@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 
 @Tag(name = "Account", description = "Operações relacionadas ao gerenciamento de contas bancárias")
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/api/v1/accounts")
 public class AccountController {
 
     private final AccountService accountService;
