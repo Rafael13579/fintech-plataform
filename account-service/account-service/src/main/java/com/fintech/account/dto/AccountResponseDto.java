@@ -4,12 +4,13 @@ import com.fintech.account.model.AccountStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Schema(description = "DTO de resposta da conta")
 public record AccountResponseDto(
 
         @Schema(description = "Identificador único da conta", example = "1")
-        Long id,
+        UUID id,
 
         @Schema(description = "Documento do titular (CPF/CNPJ)", example = "12345678900")
         String document,

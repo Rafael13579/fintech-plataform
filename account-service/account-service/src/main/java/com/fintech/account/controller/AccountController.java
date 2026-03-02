@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Tag(name = "Account", description = "Operações relacionadas ao gerenciamento de contas bancárias")
 @RestController
@@ -43,18 +44,16 @@ public class AccountController {
     }
 
     @Operation(
-            summary = "Buscar conta por documento",
-            description = "Retorna os dados de uma conta a partir do documento (CPF/CNPJ)."
+            summary = "Buscar conta por id",
+            description = "Retorna os dados de uma conta a partir do id."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Conta encontrada"),
             @ApiResponse(responseCode = "404", description = "Conta não encontrada")
     })
     @GetMapping("/{document}")
-    public ResponseEntity<AccountResponseDto> findAccount(
-            @Parameter(description = "Documento do titular da conta", example = "12345678900")
-            @PathVariable String document) {
-        return ResponseEntity.ok(accountService.getAccountByDocument(document));
+    public ResponseEntity<AccountResponseDto> findAccount(@Parameter(description = "Id da conta", example = "12389") @PathVariable UUID accountId) {
+        return ResponseEntity.ok(accountService.getAccountById(accountId));
     }
 
     @Operation(
@@ -76,13 +75,13 @@ public class AccountController {
             @ApiResponse(responseCode = "400", description = "Valor inválido"),
             @ApiResponse(responseCode = "404", description = "Conta não encontrada")
     })
-    @PatchMapping("/{document}/deposit")
+    @PatchMapping("/{accountId}/deposit")
     public ResponseEntity<Void> deposit(
             @Parameter(description = "Documento da conta", example = "12345678900")
-            @PathVariable String document,
+            @PathVariable UUID accountId,
             @Parameter(description = "Valor do depósito", example = "100.00")
             @RequestParam BigDecimal amount) {
-        accountService.deposit(amount, document);
+        accountService.deposit(amount, accountId);
         return ResponseEntity.ok().build();
     }
 
@@ -95,9 +94,9 @@ public class AccountController {
             @ApiResponse(responseCode = "400", description = "Saldo insuficiente ou valor inválido"),
             @ApiResponse(responseCode = "404", description = "Conta não encontrada")
     })
-    @PatchMapping("/{document}/withdraw")
-    public ResponseEntity<Void> withdraw(@PathVariable String document, @RequestParam BigDecimal amount) {
-        accountService.withdraw(amount, document);
+    @PatchMapping("/{accountId}/withdraw")
+    public ResponseEntity<Void> withdraw(@PathVariable UUID accountId, @RequestParam BigDecimal amount) {
+        accountService.withdraw(amount, accountId);
         return ResponseEntity.ok().build();
     }
 
@@ -110,13 +109,13 @@ public class AccountController {
             @ApiResponse(responseCode = "400", description = "Saldo insuficiente ou dados inválidos"),
             @ApiResponse(responseCode = "404", description = "Conta origem ou destino não encontrada")
     })
-    @PostMapping("/transfer")
-    public ResponseEntity<Void> transfer(@RequestBody @Valid TransferRequestDto request, @RequestParam String fromDocument) {
-
+    @PostMapping("/{accountId}/transfer")
+    public ResponseEntity<Void> transfer(@PathVariable UUID accountId, @RequestHeader("Idempotency-Key") String idempotencyKey, @RequestBody @Valid TransferRequestDto request) {
         accountService.transfer(
+                idempotencyKey,
                 request.amount(),
-                request.fromDocument(),
-                request.toDocument()
+                accountId,
+                request.toAccountId()
         );
 
         return ResponseEntity.noContent().build();
@@ -124,25 +123,25 @@ public class AccountController {
 
     @Operation(summary = "Bloquear conta")
     @ApiResponse(responseCode = "204", description = "Conta bloqueada com sucesso")
-    @PatchMapping("/{document}/set_blocked")
-    public ResponseEntity<Void> setBlocked(@PathVariable String document) {
-        accountService.setBlocked(document);
+    @PatchMapping("/{accountId}/set_blocked")
+    public ResponseEntity<Void> setBlocked(@PathVariable UUID accountId) {
+        accountService.setBlocked(accountId);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Ativar conta")
     @ApiResponse(responseCode = "204", description = "Conta ativada com sucesso")
-    @PatchMapping("/{document}/set_active")
-    public ResponseEntity<Void> setActive(@PathVariable String document) {
-        accountService.setActive(document);
+    @PatchMapping("/{accountId}/set_active")
+    public ResponseEntity<Void> setActive(@PathVariable UUID accountId) {
+        accountService.setActive(accountId);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Encerrar conta")
     @ApiResponse(responseCode = "204", description = "Conta encerrada com sucesso")
-    @PatchMapping("/{document}/set_closed")
-    public ResponseEntity<Void> setClosed(@PathVariable String document) {
-        accountService.setClosed(document);
+    @PatchMapping("/{accountId}/set_closed")
+    public ResponseEntity<Void> setClosed(@PathVariable UUID accountId) {
+        accountService.setClosed(accountId);
         return ResponseEntity.noContent().build();
     }
 }

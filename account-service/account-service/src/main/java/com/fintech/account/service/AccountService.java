@@ -7,21 +7,31 @@ import com.fintech.account.exception.InsufficientBalanceException;
 import com.fintech.account.exception.InvalidTransactionException;
 import com.fintech.account.model.Account;
 import com.fintech.account.model.AccountStatus;
+import com.fintech.account.model.TransactionRequest;
 import com.fintech.account.repository.AccountRepository;
+import com.fintech.account.repository.TransactionRequestRepository;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final TransactionRequestRepository transactionRequestRepository;
 
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository,  TransactionRequestRepository transactionRequestRepository) {
         this.accountRepository = accountRepository;
+        this.transactionRequestRepository = transactionRequestRepository;
     }
 
     @Transactional
@@ -39,8 +49,8 @@ public class AccountService {
         return mapToDto(saved);
     }
 
-    public AccountResponseDto getAccountByDocument(String document) {
-        return mapToDto(findAccountOrThrow(document));
+    public AccountResponseDto getAccountById(UUID accountId) {
+        return mapToDto(findAccountOrThrow(accountId));
     }
 
     public Page<AccountResponseDto> listAccounts(Pageable pageable) {
@@ -48,23 +58,33 @@ public class AccountService {
                 .map(this::mapToDto);
     }
 
+    @Retryable(
+            value = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100)
+    )
     @Transactional
-    public void deposit(BigDecimal amount, String document) {
+    public void deposit(BigDecimal amount, UUID accountId) {
 
         validateAmount(amount);
 
-        Account account = findAccountOrThrow(document);
+        Account account = findAccountOrThrow(accountId);
         validateAccountIsActive(account);
 
         account.setBalance(account.getBalance().add(amount));
     }
 
+    @Retryable(
+            value = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100)
+    )
     @Transactional
-    public void withdraw(BigDecimal amount, String document) {
+    public void withdraw(BigDecimal amount, UUID accountId) {
 
         validateAmount(amount);
 
-        Account account = findAccountOrThrow(document);
+        Account account = findAccountOrThrow(accountId);
         validateAccountIsActive(account);
 
         if (account.getBalance().compareTo(amount) < 0) {
@@ -74,32 +94,55 @@ public class AccountService {
         account.setBalance(account.getBalance().subtract(amount));
     }
 
+    @Retryable(
+            value = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100)
+    )
     @Transactional
-    public void transfer(BigDecimal amount, String fromDocument, String toDocument) {
+    public void transfer(String idempotencyKey, BigDecimal amount, UUID fromAccountId, UUID toAccountId) {
+
+        Optional<TransactionRequest> existing =
+                transactionRequestRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existing.isPresent()) {
+            return;
+        }
 
         validateAmount(amount);
 
-        if (fromDocument.equals(toDocument)) {
-            throw new InvalidTransactionException("Cannot transfer to the same account");
-        }
-
-        Account sender = findAccountOrThrow(fromDocument);
-        Account receiver = findAccountOrThrow(toDocument);
+        Account sender = findAccountOrThrow(fromAccountId);
+        Account receiver = findAccountOrThrow(toAccountId);
 
         validateAccountIsActive(sender);
         validateAccountIsActive(receiver);
 
         if (sender.getBalance().compareTo(amount) < 0) {
             throw new InsufficientBalanceException();
+        } else {
+            sender.setBalance(sender.getBalance().subtract(amount));
         }
 
-        sender.setBalance(sender.getBalance().subtract(amount));
-        receiver.setBalance(receiver.getBalance().add(amount));
+        if (receiver.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        } else {
+            receiver.setBalance(receiver.getBalance().add(amount));
+        }
+
+        TransactionRequest request = TransactionRequest.builder()
+                .idempotencyKey(idempotencyKey)
+                .fromAccountId(fromAccountId)
+                .toAccountId(toAccountId)
+                .amount(amount)
+                .createdAt(Instant.now())
+                .build();
+
+        transactionRequestRepository.save(request);
     }
 
     @Transactional
-    public void setBlocked(String document) {
-        Account account = findAccountOrThrow(document);
+    public void setBlocked(UUID accountId) {
+        Account account = findAccountOrThrow(accountId);
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             throw new InvalidTransactionException("Closed account cannot be modified");
@@ -113,8 +156,8 @@ public class AccountService {
     }
 
     @Transactional
-    public void setActive(String document) {
-        Account account = findAccountOrThrow(document);
+    public void setActive(UUID accountId) {
+        Account account = findAccountOrThrow(accountId);
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             throw new InvalidTransactionException("Closed account cannot be reactivated");
@@ -128,8 +171,8 @@ public class AccountService {
     }
 
     @Transactional
-    public void setClosed(String document) {
-        Account account = findAccountOrThrow(document);
+    public void setClosed(UUID  accountId) {
+        Account account = findAccountOrThrow(accountId);
 
         if (account.getStatus() == AccountStatus.CLOSED) {
             throw new InvalidTransactionException("Account is already closed");
@@ -138,9 +181,9 @@ public class AccountService {
         account.setStatus(AccountStatus.CLOSED);
     }
 
-    private Account findAccountOrThrow(String document) {
-        return accountRepository.findByDocument(document)
-                .orElseThrow(() -> new AccountNotFoundException(document));
+    private Account findAccountOrThrow(UUID accountId) {
+        return accountRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new AccountNotFoundException(accountId));
     }
 
     private void validateAmount(BigDecimal amount) {
