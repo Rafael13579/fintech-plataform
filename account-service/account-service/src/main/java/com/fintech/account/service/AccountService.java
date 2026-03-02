@@ -5,10 +5,9 @@ import com.fintech.account.dto.AccountResponseDto;
 import com.fintech.account.exception.AccountNotFoundException;
 import com.fintech.account.exception.InsufficientBalanceException;
 import com.fintech.account.exception.InvalidTransactionException;
-import com.fintech.account.model.Account;
-import com.fintech.account.model.AccountStatus;
-import com.fintech.account.model.TransactionRequest;
+import com.fintech.account.model.*;
 import com.fintech.account.repository.AccountRepository;
+import com.fintech.account.repository.TransactionRepository;
 import com.fintech.account.repository.TransactionRequestRepository;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
@@ -18,6 +17,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
@@ -28,10 +28,12 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final TransactionRequestRepository transactionRequestRepository;
+    private final TransactionRepository transactionRepository;
 
-    public AccountService(AccountRepository accountRepository,  TransactionRequestRepository transactionRequestRepository) {
+    public AccountService(AccountRepository accountRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository) {
         this.accountRepository = accountRepository;
         this.transactionRequestRepository = transactionRequestRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -102,8 +104,7 @@ public class AccountService {
     @Transactional
     public void transfer(String idempotencyKey, BigDecimal amount, UUID fromAccountId, UUID toAccountId) {
 
-        Optional<TransactionRequest> existing =
-                transactionRequestRepository.findByIdempotencyKey(idempotencyKey);
+        Optional<TransactionRequest> existing = transactionRequestRepository.findByIdempotencyKey(idempotencyKey);
 
         if (existing.isPresent()) {
             return;
@@ -117,17 +118,26 @@ public class AccountService {
         validateAccountIsActive(sender);
         validateAccountIsActive(receiver);
 
+        Transaction transaction = Transaction.builder()
+                .fromAccountId(fromAccountId)
+                .toAccountId(toAccountId)
+                .amount(amount)
+                .createdAt(Instant.now())
+                .status(TransactionStatus.PENDING)
+                .build();
+
+        transactionRepository.save(transaction);
+
         if (sender.getBalance().compareTo(amount) < 0) {
+            transaction.setStatus(TransactionStatus.FAILED);
             throw new InsufficientBalanceException();
-        } else {
-            sender.setBalance(sender.getBalance().subtract(amount));
         }
 
-        if (receiver.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientBalanceException();
-        } else {
-            receiver.setBalance(receiver.getBalance().add(amount));
-        }
+        sender.setBalance(sender.getBalance().subtract(amount));
+        receiver.setBalance(receiver.getBalance().add(amount));
+
+        transaction.setCompletedAt(Instant.now());
+        transaction.setStatus(TransactionStatus.COMPLETED);
 
         TransactionRequest request = TransactionRequest.builder()
                 .idempotencyKey(idempotencyKey)
@@ -179,6 +189,10 @@ public class AccountService {
         }
 
         account.setStatus(AccountStatus.CLOSED);
+    }
+
+    public List<Transaction> findAllByAccountId(UUID accountId) {
+        return transactionRepository.findByAccountIdOrderByCreatedAt(accountId).orElse(null);
     }
 
     private Account findAccountOrThrow(UUID accountId) {

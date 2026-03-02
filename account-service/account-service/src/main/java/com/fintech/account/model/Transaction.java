@@ -4,37 +4,38 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "accounts")
-@Getter @Setter
+@Table(name = "transactions")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Account {
+public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @Version
-    @Column(nullable = false)
-    private int version;
-
-    @Column(nullable = false, unique = true)
-    private String document;
+    private UUID Id;
 
     @Column(nullable = false)
-    private BigDecimal balance;
+    private UUID fromAccountId;
 
     @Column(nullable = false)
-    private String holderName;
+    private UUID toAccountId;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private BigDecimal amount;
 
     @Column(nullable = false)
+    private Instant createdAt;
+
     @Enumerated(EnumType.STRING)
-    private AccountStatus status;
+    @Column(nullable = false)
+    private TransactionStatus status;
+
+    private Instant completedAt;
+
+
 }
