@@ -1,5 +1,7 @@
 package com.fintech.account.exception;
 
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -42,8 +44,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidationErrors(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<Object> handleValidationErrors(MethodArgumentNotValidException ex) {
 
         var errors = ex.getBindingResult()
                 .getFieldErrors()
@@ -52,5 +53,12 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.toList());
 
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<String> handleOptimisticLock(OptimisticLockingFailureException ex) {
+   return ResponseEntity.status(409)
+                .body("Concurrent modification detected. Please retry.");
+
     }
 }

@@ -18,6 +18,10 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Version
+    @Column(nullable = false)
+    private int version;
+
     @Column(nullable = false, unique = true)
     private String document;
 
