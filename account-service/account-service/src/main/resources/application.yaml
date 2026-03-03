@@ -7,7 +7,11 @@ spring:
     username: fintech_user
     password: fintech_pass
     driver-class-name: org.postgresql.Driver
-
+    kafka:
+      bootstrap-servers: localhost:9092
+      producer:
+        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,3 +19,5 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+
