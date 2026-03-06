@@ -3,7 +3,6 @@ package com.fintech.account.service;
 import com.fintech.account.dto.AccountCreateDto;
 import com.fintech.account.dto.AccountResponseDto;
 import com.fintech.account.dto.TransferCompletedEvent;
-import com.fintech.account.dto.TransferRequestDto;
 import com.fintech.account.exception.AccountNotFoundException;
 import com.fintech.account.exception.InsufficientBalanceException;
 import com.fintech.account.exception.InvalidTransactionException;
@@ -31,14 +30,12 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final TransactionRequestRepository transactionRequestRepository;
     private final TransactionRepository transactionRepository;
-    private final TransferEventProducer eventProducer;
     private final TransferEventProducer transferEventProducer;
 
-    public AccountService(AccountRepository accountRepository, TransferEventProducer eventProducer , TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository, TransferEventProducer transferEventProducer) {
+    public AccountService(AccountRepository accountRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository, TransferEventProducer transferEventProducer) {
         this.accountRepository = accountRepository;
         this.transactionRequestRepository = transactionRequestRepository;
         this.transactionRepository = transactionRepository;
-        this.eventProducer = eventProducer;
         this.transferEventProducer = transferEventProducer;
     }
 

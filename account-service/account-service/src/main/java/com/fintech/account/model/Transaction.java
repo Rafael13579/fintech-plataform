@@ -17,12 +17,10 @@ import java.util.UUID;
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID Id;
+    private UUID id;
 
-    @Column(nullable = false)
     private UUID fromAccountId;
 
-    @Column(nullable = false)
     private UUID toAccountId;
 
     @Column(nullable = false)
