@@ -1,15 +1,21 @@
 package com.fintech.account.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.account.dto.AccountCreateDto;
 import com.fintech.account.dto.AccountResponseDto;
-import com.fintech.account.dto.TransferCompletedEvent;
+import com.fintech.account.event.TransferCompletedEvent;
 import com.fintech.account.exception.AccountNotFoundException;
 import com.fintech.account.exception.InsufficientBalanceException;
 import com.fintech.account.exception.InvalidTransactionException;
 import com.fintech.account.model.*;
+import com.fintech.account.outbox.model.OutboxEvent;
 import com.fintech.account.repository.AccountRepository;
+import com.fintech.account.outbox.repository.OutboxRepository;
 import com.fintech.account.repository.TransactionRepository;
 import com.fintech.account.repository.TransactionRequestRepository;
+import com.fintech.account.transaction.model.Transaction;
+import com.fintech.account.transaction.model.TransactionStatus;
+import com.fintech.account.transaction.request.TransactionRequest;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +23,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.math.BigDecimal;
@@ -30,13 +37,15 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final TransactionRequestRepository transactionRequestRepository;
     private final TransactionRepository transactionRepository;
-    private final TransferEventProducer transferEventProducer;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
-    public AccountService(AccountRepository accountRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository, TransferEventProducer transferEventProducer) {
+    public AccountService(AccountRepository accountRepository, OutboxRepository outboxRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository, TransferEventProducer transferEventProducer, ObjectMapper objectMapper) {
         this.accountRepository = accountRepository;
         this.transactionRequestRepository = transactionRequestRepository;
         this.transactionRepository = transactionRepository;
-        this.transferEventProducer = transferEventProducer;
+        this.outboxRepository = outboxRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -160,7 +169,23 @@ public class AccountService {
                 amount.toString()
         );
 
-        transferEventProducer.publish(event);
+
+        String payload;
+
+        try {
+            payload = objectMapper.writeValueAsString(event);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize event", e);
+        }
+
+        OutboxEvent outbox = OutboxEvent.builder()
+                .eventType("TransferCompletedEvent")
+                .payload(payload)
+                .published(false)
+                .createdAt(Instant.now())
+                .build();
+
+        outboxRepository.save(outbox);
     }
 
     @Transactional

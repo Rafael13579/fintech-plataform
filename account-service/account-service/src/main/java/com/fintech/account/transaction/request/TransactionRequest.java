@@ -1,6 +1,5 @@
-package com.fintech.account.model;
+package com.fintech.account.transaction.request;
 
-import com.fintech.account.model.RequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

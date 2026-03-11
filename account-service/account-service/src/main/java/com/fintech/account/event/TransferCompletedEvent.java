@@ -1,4 +1,4 @@
-package com.fintech.account.dto;
+package com.fintech.account.event;
 
 public record TransferCompletedEvent(
         String transactionId,

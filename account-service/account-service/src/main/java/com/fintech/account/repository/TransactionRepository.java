@@ -1,6 +1,6 @@
 package com.fintech.account.repository;
 
-import com.fintech.account.model.Transaction;
+import com.fintech.account.transaction.model.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

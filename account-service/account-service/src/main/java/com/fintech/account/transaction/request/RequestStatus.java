@@ -1,4 +1,4 @@
-package com.fintech.account.model;
+package com.fintech.account.transaction.request;
 
 public enum RequestStatus {
     PENDING,
