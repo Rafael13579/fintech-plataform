@@ -29,7 +29,7 @@ public class OutboxPublisher {
                 repository.save(event);
 
             } catch (Exception e) {
-
+                System.out.println("Failed to publish event: " + event.getId());
             }
         }
     }
