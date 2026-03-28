@@ -11,5 +11,5 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByAccountId(UUID accountId);
 
-    Page<Account> listAccounts(Pageable pageable);
+    Page<Account> findAll(Pageable pageable);
 }

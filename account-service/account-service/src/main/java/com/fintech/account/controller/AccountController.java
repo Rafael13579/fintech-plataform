@@ -63,7 +63,7 @@ public class AccountController {
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping()
     public ResponseEntity<Page<AccountResponseDto>> findAllAccount(Pageable pageable) {
-        return ResponseEntity.ok(accountService.listAccounts(pageable));
+        return ResponseEntity.ok(accountService.findAll(pageable));
     }
 
     @Operation(

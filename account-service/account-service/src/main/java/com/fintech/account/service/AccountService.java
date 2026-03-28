@@ -1,6 +1,5 @@
 package com.fintech.account.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.account.dto.AccountCreateDto;
 import com.fintech.account.dto.AccountResponseDto;
 import com.fintech.account.event.TransferCompletedEvent;
@@ -23,7 +22,8 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+
 
 import java.util.List;
 import java.math.BigDecimal;
@@ -34,18 +34,18 @@ import java.util.UUID;
 @Service
 public class AccountService {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private final AccountRepository accountRepository;
     private final TransactionRequestRepository transactionRequestRepository;
     private final TransactionRepository transactionRepository;
     private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
 
-    public AccountService(AccountRepository accountRepository, OutboxRepository outboxRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository, TransferEventProducer transferEventProducer, ObjectMapper objectMapper) {
+    public AccountService(AccountRepository accountRepository, OutboxRepository outboxRepository, TransactionRepository transactionRepository, TransactionRequestRepository transactionRequestRepository) {
         this.accountRepository = accountRepository;
         this.transactionRequestRepository = transactionRequestRepository;
         this.transactionRepository = transactionRepository;
         this.outboxRepository = outboxRepository;
-        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -67,7 +67,7 @@ public class AccountService {
         return mapToDto(findAccountOrThrow(accountId));
     }
 
-    public Page<AccountResponseDto> listAccounts(Pageable pageable) {
+    public Page<AccountResponseDto> findAll(Pageable pageable) {
         return accountRepository.findAll(pageable)
                 .map(this::mapToDto);
     }
@@ -172,8 +172,9 @@ public class AccountService {
 
         String payload;
 
+
         try {
-            payload = objectMapper.writeValueAsString(event);
+            payload = MAPPER.writeValueAsString(event);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize event", e);
         }
