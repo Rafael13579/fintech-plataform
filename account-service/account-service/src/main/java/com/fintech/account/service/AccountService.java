@@ -231,11 +231,11 @@ public class AccountService {
     }
 
     public List<Transaction> findAllByAccountId(UUID accountId) {
-        return transactionRepository.findByAccountIdOrderByCreatedAt(accountId).orElse(null);
+        return transactionRepository.findByIdOrderByCreatedAt(accountId).orElse(null);
     }
 
     private Account findAccountOrThrow(UUID accountId) {
-        return accountRepository.findByAccountId(accountId)
+        return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId));
     }
 
