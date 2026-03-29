@@ -12,7 +12,7 @@ public record TransferRequestDto(
                 example = "98765432106",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotBlank(message = "Orige document is required")
+        @NotNull(message = "Origin document is required")
         UUID fromAccountId,
 
         @Schema(
@@ -20,7 +20,7 @@ public record TransferRequestDto(
                 example = "98765432100",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotBlank(message = "Receiver document is required")
+        @NotNull(message = "Receiver document is required")
         UUID toAccountId,
 
         @NotNull(message = "Amount is required")

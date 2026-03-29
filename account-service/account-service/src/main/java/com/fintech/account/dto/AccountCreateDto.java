@@ -13,7 +13,7 @@ public record AccountCreateDto(
                 example = "12345678900",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotBlank(message = "Document is required")
+        @NotNull(message = "Document is required")
         @Size(min = 11, max = 14, message = "Document must be between 11 and 14 characters")
         String document,
 
@@ -22,17 +22,7 @@ public record AccountCreateDto(
                 example = "Rafael Silva",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        @NotBlank(message = "Holder name is required")
+        @NotNull(message = "Holder name is required")
         @Size(min = 3, max = 100, message = "Holder name must be between 3 and 100 characters")
-        String holderName,
-
-        @Schema(
-                description = "Saldo inicial da conta",
-                example = "0.00",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "Initial balance cannot be null")
-        @PositiveOrZero(message = "Initial balance cannot be negative")
-        BigDecimal balance
-
+        String holderName
 ) {}

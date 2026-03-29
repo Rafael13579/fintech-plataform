@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: fintech_user
       POSTGRES_PASSWORD: fintech_pass
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -50,6 +50,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fintech
       SPRING_DATASOURCE_USERNAME: fintech_user
       SPRING_DATASOURCE_PASSWORD: fintech_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: fintech-kafka:29092
 
   notification-service:
     build:

@@ -56,6 +56,7 @@ public class AccountService {
                 .holderName(dto.holderName())
                 .balance(BigDecimal.ZERO)
                 .status(AccountStatus.ACTIVE)
+                .createdAt(Instant.now())
                 .build();
 
         Account saved = accountRepository.save(account);
