@@ -14,6 +14,7 @@ import com.fintech.account.repository.TransactionRepository;
 import com.fintech.account.repository.TransactionRequestRepository;
 import com.fintech.account.transaction.model.Transaction;
 import com.fintech.account.transaction.model.TransactionStatus;
+import com.fintech.account.transaction.request.RequestStatus;
 import com.fintech.account.transaction.request.TransactionRequest;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 
+import java.util.Collections;
 import java.util.List;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -157,6 +159,8 @@ public class AccountService {
                 .fromAccountId(fromAccountId)
                 .toAccountId(toAccountId)
                 .amount(amount)
+                .status(RequestStatus.APPROVED)
+                .transactionId(transaction.getId())
                 .createdAt(Instant.now())
                 .build();
 
@@ -232,7 +236,10 @@ public class AccountService {
     }
 
     public List<Transaction> findAllByAccountId(UUID accountId) {
-        return transactionRepository.findByIdOrderByCreatedAt(accountId).orElse(null);
+        List<Transaction> transactions = transactionRepository
+                .findByFromAccountIdOrToAccountIdOrderByCreatedAt(accountId, accountId);
+
+        return transactions != null ? transactions : Collections.emptyList();
     }
 
     private Account findAccountOrThrow(UUID accountId) {

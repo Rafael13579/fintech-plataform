@@ -51,7 +51,7 @@ public class AccountController {
             @ApiResponse(responseCode = "200", description = "Conta encontrada"),
             @ApiResponse(responseCode = "404", description = "Conta não encontrada")
     })
-    @GetMapping("/{document}")
+    @GetMapping("/{accountId}")
     public ResponseEntity<AccountResponseDto> findAccount(@Parameter(description = "Id da conta", example = "12389") @PathVariable UUID accountId) {
         return ResponseEntity.ok(accountService.getAccountById(accountId));
     }

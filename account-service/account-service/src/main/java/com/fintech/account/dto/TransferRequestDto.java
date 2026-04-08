@@ -8,16 +8,16 @@ import java.util.UUID;
 @Schema(description = "DTO para transferência entre contas")
 public record TransferRequestDto(
         @Schema(
-                description = "Documento da conta de origem",
-                example = "98765432106",
+                description = "Id da conta de origem",
+                example = "550e8400-e29b-41d4-a716-446655440000",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Origin document is required")
         UUID fromAccountId,
 
         @Schema(
-                description = "Documento da conta de destino",
-                example = "98765432100",
+                description = "Id da conta de destino",
+                example = "550e8400-e29b-41d4-a716-446655440000",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull(message = "Receiver document is required")

@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
     Optional<List<Transaction>> findByIdOrderByCreatedAt(UUID accountId);
 
+    List<Transaction> findByFromAccountIdOrToAccountIdOrderByCreatedAt(UUID accountId, UUID accountId1);
 }
