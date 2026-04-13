@@ -1,16 +1,8 @@
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: fintech-kafka:29092
     consumer:
-      group-id: notification-group
+      group-id: notification-service-group
       auto-offset-reset: earliest
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-      spring:
-        kafka:
-          bootstrap-servers: localhost:9092
-          consumer:
-            group-id: notification-service
-            auto-offset-reset: earliest
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
