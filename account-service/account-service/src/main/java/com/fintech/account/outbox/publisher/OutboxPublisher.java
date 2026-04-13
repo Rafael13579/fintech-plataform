@@ -30,6 +30,7 @@ public class OutboxPublisher {
 
             } catch (Exception e) {
                 System.out.println("Failed to publish event: " + event.getId());
+                e.printStackTrace();
             }
         }
     }
