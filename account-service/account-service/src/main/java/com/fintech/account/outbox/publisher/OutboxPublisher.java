@@ -3,7 +3,6 @@ package com.fintech.account.outbox.publisher;
 import com.fintech.account.outbox.model.OutboxEvent;
 import com.fintech.account.outbox.repository.OutboxRepository;
 import com.fintech.account.service.TransferEventProducer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

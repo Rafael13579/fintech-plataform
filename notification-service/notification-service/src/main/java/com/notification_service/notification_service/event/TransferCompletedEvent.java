@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 
 public record TransferCompletedEvent(String transactionId,
                                      String fromAccountId,
-                                     String toAccountID,
+                                     String toAccountId,
                                      BigDecimal amount) {
 }

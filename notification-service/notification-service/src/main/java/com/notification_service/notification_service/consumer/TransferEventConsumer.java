@@ -18,7 +18,7 @@ public class TransferEventConsumer {
             System.out.println("Transfer completed");
             System.out.println("Transaction: " + event.transactionId());
             System.out.println("From: " + event.fromAccountId());
-            System.out.println("To: " + event.toAccountID());
+            System.out.println("To: " + event.toAccountId());
             System.out.println("Amount: " + event.amount());
         } catch (Exception e) {
             e.printStackTrace();
