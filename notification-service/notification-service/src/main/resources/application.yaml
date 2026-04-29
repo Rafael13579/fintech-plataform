@@ -6,3 +6,14 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+mail:
+  host: sandbox.smtp.mailtrap.io # Exemplo usando Mailtrap
+  port: 2525
+  username: "6c5a1fa5504aea"
+  password: "9c3ce399ea426f"
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true

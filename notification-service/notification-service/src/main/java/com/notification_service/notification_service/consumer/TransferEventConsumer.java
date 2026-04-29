@@ -1,6 +1,7 @@
 package com.notification_service.notification_service.consumer;
 
 import com.notification_service.notification_service.event.TransferCompletedEvent;
+import com.notification_service.notification_service.service.MailService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class TransferEventConsumer {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final MailService mailService;
+
+    public TransferEventConsumer(MailService mailService) {
+        this.mailService = mailService;
+    }
 
     @KafkaListener(topics = "transfer.completed", groupId = "notification-service-group")
     public void listen(String message) {
@@ -20,6 +26,9 @@ public class TransferEventConsumer {
             System.out.println("From: " + event.fromAccountId());
             System.out.println("To: " + event.toAccountId());
             System.out.println("Amount: " + event.amount());
+
+            mailService.sendMail(event.fromAccountId(), event.amount());
+
         } catch (Exception e) {
             e.printStackTrace();
         }
