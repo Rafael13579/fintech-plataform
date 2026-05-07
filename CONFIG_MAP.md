@@ -1,3 +1,35 @@
 ## Itens de Cofiuração
 
-- 
+
+- AccountController.java
+- AccountCreateDto.java
+- AccountResponseDto.java
+- TransferRequestDto.java
+- TransferCompletedEvent.java
+- exception
+- AccountNotFoundException.java
+- ErrorResponse.java
+- GlobalExceptionHandler.java
+- InsufficientBalanceException.java
+- InvalidTransactionException.java
+- Account.java
+- AccountStatus.java
+- KafkaConfig.java
+- OutboxEvent.java
+- OutboxPublisher.java
+- OutboxRepository.java
+- AccountRepository.java
+- TransactionRepository.java
+- TransactionRequestRepository.java
+- AccountService.java
+- TransferEventProducer.java
+- Transaction.java
+- TransactionStatus.java
+- RequestStatus.java
+- TransactionRequest.java
+- .gitattributes
+- .gitignore
+- Dockerfile
+- mvnw
+- mvnw.cmd
+- pom.xml
