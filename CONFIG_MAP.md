@@ -1,6 +1,6 @@
 ## Itens de Cofiuração
 
-
+### Account-Service
 - AccountController.java
 - AccountCreateDto.java
 - AccountResponseDto.java
@@ -27,6 +27,22 @@
 - TransactionStatus.java
 - RequestStatus.java
 - TransactionRequest.java
+- .gitattributes
+- .gitignore
+- Dockerfile
+- mvnw
+- mvnw.cmd
+- pom.xml
+
+### Notification-service
+
+- JavaMailConfig.java
+- TransferEventConsumer.java
+- TransferCompletedEvent.java
+- MailService.java
+- NotificationServiceApplication.java
+- application.yaml
+- NotificationServiceApplicationTest.java
 - .gitattributes
 - .gitignore
 - Dockerfile
